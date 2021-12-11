@@ -1,16 +1,12 @@
-FROM debian:buster-slim
+FROM nginx:alpine
 
 COPY default.conf /etc/nginx/conf.d/
 
 COPY index.sh /usr/share/nginx/html/
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends nginx fcgiwrap && \
-    apt-get autoclean && \
-    rm -rf /var/lib/apt/lists/* && \
-    echo "daemon off;" >> /etc/nginx/nginx.conf && \
-    rm -f /etc/nginx/sites-enabled/default && \
-    chmod 744 /usr/share/nginx/html/index.sh && \
-    chown www-data:www-data /usr/share/nginx/html/index.sh
+COPY supervisord.conf /etc/supervisor/supervisord.conf
+RUN apk add --no-cache supervisor fcgiwrap shadow && \
+    usermod --shell /bin/sh nginx && \
+    chmod +x /usr/share/nginx/html/index.sh
 
-CMD /etc/init.d/fcgiwrap start && nginx
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]
